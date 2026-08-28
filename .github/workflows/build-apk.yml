@@ -68,6 +68,28 @@ jobs:
             flutter create --platforms=android --org com.alhuda .
           fi
 
+      - name: Set proper app display name (AL-HUDA)
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          test -f "$MANIFEST"
+          sed -i 's/android:label="[^"]*"/android:label="AL-HUDA"/' "$MANIFEST"
+          grep -q 'android:label="AL-HUDA"' "$MANIFEST"
+          echo "PASS: app label set to AL-HUDA"
+
+      - name: Add location permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          test -f "$MANIFEST"
+          if ! grep -q 'ACCESS_FINE_LOCATION' "$MANIFEST"; then
+            sed -i '0,/<application/s//<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"\/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"\/>\n    <application/' "$MANIFEST"
+          fi
+          grep -q 'ACCESS_FINE_LOCATION' "$MANIFEST"
+          echo "PASS: location permissions present"
+
       - name: Get dependencies
         run: flutter pub get
 
