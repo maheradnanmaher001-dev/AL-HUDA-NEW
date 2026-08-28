@@ -75,8 +75,8 @@ jobs:
           if [ ! -f "$GRADLE_FILE" ]; then
             GRADLE_FILE="android/app/build.gradle"
           fi
-          sed -i 's/flutter\.compileSdkVersion/34/' "$GRADLE_FILE"
-          sed -i 's/flutter\.targetSdkVersion/34/' "$GRADLE_FILE"
+          sed -i 's/flutter\.compileSdkVersion/36/' "$GRADLE_FILE"
+          sed -i 's/flutter\.targetSdkVersion/36/' "$GRADLE_FILE"
 
       - name: Set proper app display name (AL-HUDA)
         shell: bash
