@@ -68,16 +68,6 @@ jobs:
             flutter create --platforms=android --org com.alhuda .
           fi
 
-      - name: Fix compileSdk/targetSdk for geocoding plugin
-        run: |
-          set -euo pipefail
-          GRADLE_FILE="android/app/build.gradle.kts"
-          if [ ! -f "$GRADLE_FILE" ]; then
-            GRADLE_FILE="android/app/build.gradle"
-          fi
-          sed -i 's/flutter\.compileSdkVersion/36/' "$GRADLE_FILE"
-          sed -i 's/flutter\.targetSdkVersion/36/' "$GRADLE_FILE"
-
       - name: Set proper app display name (AL-HUDA)
         shell: bash
         run: |
