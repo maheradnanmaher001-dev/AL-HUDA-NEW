@@ -97,15 +97,15 @@ jobs:
           GRADLE_KTS="android/app/build.gradle.kts"
           GRADLE_GROOVY="android/app/build.gradle"
           if [ -f "$GRADLE_KTS" ]; then
-            sed -i 's/compileSdk = flutter\.compileSdkVersion/compileSdk = 35/' "$GRADLE_KTS"
-            sed -i 's/targetSdk = flutter\.targetSdkVersion/targetSdk = 35/' "$GRADLE_KTS"
-            grep -q 'compileSdk = 35' "$GRADLE_KTS"
-            echo "PASS: compileSdk/targetSdk bumped to 35 in build.gradle.kts"
+            sed -i 's/compileSdk = flutter\.compileSdkVersion/compileSdk = 36/' "$GRADLE_KTS"
+            sed -i 's/targetSdk = flutter\.targetSdkVersion/targetSdk = 36/' "$GRADLE_KTS"
+            grep -q 'compileSdk = 36' "$GRADLE_KTS"
+            echo "PASS: compileSdk/targetSdk bumped to 36 in build.gradle.kts"
           elif [ -f "$GRADLE_GROOVY" ]; then
-            sed -i 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 35/' "$GRADLE_GROOVY"
-            sed -i 's/targetSdkVersion flutter\.targetSdkVersion/targetSdkVersion 35/' "$GRADLE_GROOVY"
-            grep -q 'compileSdkVersion 35' "$GRADLE_GROOVY"
-            echo "PASS: compileSdk/targetSdk bumped to 35 in build.gradle"
+            sed -i 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 36/' "$GRADLE_GROOVY"
+            sed -i 's/targetSdkVersion flutter\.targetSdkVersion/targetSdkVersion 36/' "$GRADLE_GROOVY"
+            grep -q 'compileSdkVersion 36' "$GRADLE_GROOVY"
+            echo "PASS: compileSdk/targetSdk bumped to 36 in build.gradle"
           else
             echo "No app-level build.gradle(.kts) found!" >&2
             exit 1
