@@ -94,21 +94,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          LOCAL_PROPS="android/local.properties"
+          test -f "$LOCAL_PROPS"
+          # This is the officially supported way to override the SDK level
+          # used by EVERY module in the build — including plugin subprojects
+          # like geocoding_android and geolocator_android, not just :app.
+          sed -i '/^flutter.compileSdkVersion=/d;/^flutter.targetSdkVersion=/d' "$LOCAL_PROPS"
+          {
+            echo "flutter.compileSdkVersion=36"
+            echo "flutter.targetSdkVersion=36"
+          } >> "$LOCAL_PROPS"
+          grep -q 'flutter.compileSdkVersion=36' "$LOCAL_PROPS"
+          echo "PASS: global compileSdk/targetSdk set to 36 via local.properties"
+
+          # Belt-and-suspenders: also hardcode it in :app's own build.gradle
+          # in case local.properties is ever ignored for that module.
           GRADLE_KTS="android/app/build.gradle.kts"
           GRADLE_GROOVY="android/app/build.gradle"
           if [ -f "$GRADLE_KTS" ]; then
             sed -i 's/compileSdk = flutter\.compileSdkVersion/compileSdk = 36/' "$GRADLE_KTS"
             sed -i 's/targetSdk = flutter\.targetSdkVersion/targetSdk = 36/' "$GRADLE_KTS"
-            grep -q 'compileSdk = 36' "$GRADLE_KTS"
-            echo "PASS: compileSdk/targetSdk bumped to 36 in build.gradle.kts"
           elif [ -f "$GRADLE_GROOVY" ]; then
             sed -i 's/compileSdkVersion flutter\.compileSdkVersion/compileSdkVersion 36/' "$GRADLE_GROOVY"
             sed -i 's/targetSdkVersion flutter\.targetSdkVersion/targetSdkVersion 36/' "$GRADLE_GROOVY"
-            grep -q 'compileSdkVersion 36' "$GRADLE_GROOVY"
-            echo "PASS: compileSdk/targetSdk bumped to 36 in build.gradle"
-          else
-            echo "No app-level build.gradle(.kts) found!" >&2
-            exit 1
           fi
 
       - name: Get dependencies
