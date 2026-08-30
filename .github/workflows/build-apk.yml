@@ -68,6 +68,14 @@ jobs:
             flutter create --platforms=android --org com.alhuda .
           fi
 
+      - name: Use a fixed debug keystore (so updates install without uninstalling)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.android
+          cp android_keystore/debug.keystore ~/.android/debug.keystore
+          echo "PASS: fixed debug keystore installed — every build will share the same signature."
+
       - name: Set proper app display name (AL-HUDA)
         shell: bash
         run: |
@@ -89,6 +97,22 @@ jobs:
           fi
           grep -q 'ACCESS_FINE_LOCATION' "$MANIFEST"
           echo "PASS: location permissions present"
+
+      - name: Install custom app icon
+        shell: bash
+        run: |
+          set -euo pipefail
+          RES="android/app/src/main/res"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p "$RES/mipmap-$density"
+            cp "icon_source/mipmap-${density}_ic_launcher.png" "$RES/mipmap-$density/ic_launcher.png"
+          done
+          # Remove the adaptive-icon override (if the template generated one) —
+          # on Android 8+, mipmap-anydpi-v26/ic_launcher.xml takes priority
+          # over the plain ic_launcher.png files above and would otherwise
+          # keep showing Flutter's default logo instead of ours.
+          rm -rf "$RES/mipmap-anydpi-v26"
+          echo "PASS: custom app icon installed for all densities"
 
       - name: Get dependencies
         run: flutter pub get
