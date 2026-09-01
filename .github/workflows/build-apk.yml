@@ -114,6 +114,34 @@ jobs:
           rm -rf "$RES/mipmap-anydpi-v26"
           echo "PASS: custom app icon installed for all densities"
 
+      - name: Install custom splash screen
+        shell: bash
+        run: |
+          set -euo pipefail
+          RES="android/app/src/main/res"
+          mkdir -p "$RES/drawable" "$RES/drawable-v21"
+          cp icon_source/splash_bg.png "$RES/drawable/splash_bg.png"
+          cp icon_source/splash_bg.png "$RES/drawable-v21/splash_bg.png"
+
+          cat > "$RES/drawable/launch_background.xml" << 'XMLEOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item android:drawable="@android:color/white" />
+              <item android:gravity="center">
+                  <bitmap android:gravity="center" android:src="@drawable/splash_bg" />
+              </item>
+          </layer-list>
+          XMLEOF
+          cp "$RES/drawable/launch_background.xml" "$RES/drawable-v21/launch_background.xml"
+
+          # Android 12+ splash screen API, if the template generated it —
+          # branded background color; safe to skip if the file isn't present.
+          V31_STYLES="$RES/values-v31/styles.xml"
+          if [ -f "$V31_STYLES" ]; then
+            sed -i 's/name="android:windowSplashScreenBackground">[^<]*</name="android:windowSplashScreenBackground">#FBF6EC</' "$V31_STYLES"
+          fi
+          echo "PASS: custom splash screen installed"
+
       - name: Get dependencies
         run: flutter pub get
 
