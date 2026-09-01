@@ -1,0 +1,64 @@
+name: Deploy Backend Files (for Vercel)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Locate project ZIP
+        id: zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          FOUND=$(find . -maxdepth 1 -iname "*.zip" | head -n 1 || true)
+          if [ -z "$FOUND" ]; then
+            echo "No .zip file found in the repo root." >&2
+            exit 1
+          fi
+          echo "Found ZIP: $FOUND"
+          echo "path=$FOUND" >> "$GITHUB_OUTPUT"
+
+      - name: Extract backend/ folder from the ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_PATH="${{ steps.zip.outputs.path }}"
+          TMP_DIR=".zip_extract_tmp"
+          rm -rf "$TMP_DIR"
+          mkdir -p "$TMP_DIR"
+          unzip -q "$ZIP_PATH" -d "$TMP_DIR"
+
+          SRC_BACKEND=$(find "$TMP_DIR" -type d -name backend | head -n 1 || true)
+          if [ -z "$SRC_BACKEND" ]; then
+            echo "No 'backend' folder found inside the ZIP." >&2
+            exit 1
+          fi
+
+          rm -rf backend
+          cp -R "$SRC_BACKEND" backend
+          rm -rf "$TMP_DIR"
+
+          test -f backend/main.py
+          echo "PASS: backend/ extracted with $(find backend -type f | wc -l) files."
+
+      - name: Commit and push real backend/ files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "al-huda-bot"
+          git config user.email "actions@github.com"
+          git add backend
+          if git diff --cached --quiet; then
+            echo "No changes to backend/ — nothing to commit."
+          else
+            git commit -m "Deploy backend files (auto-extracted from ZIP) [skip ci]"
+            git push
+          fi
