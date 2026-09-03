@@ -68,14 +68,6 @@ jobs:
             flutter create --platforms=android --org com.alhuda .
           fi
 
-      - name: Use a fixed debug keystore (so updates install without uninstalling)
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.android
-          cp android_keystore/debug.keystore ~/.android/debug.keystore
-          echo "PASS: fixed debug keystore installed — every build will share the same signature."
-
       - name: Set proper app display name (AL-HUDA)
         shell: bash
         run: |
@@ -98,56 +90,26 @@ jobs:
           grep -q 'ACCESS_FINE_LOCATION' "$MANIFEST"
           echo "PASS: location permissions present"
 
-      - name: Install custom app icon
-        shell: bash
-        run: |
-          set -euo pipefail
-          RES="android/app/src/main/res"
-          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            mkdir -p "$RES/mipmap-$density"
-            cp "icon_source/mipmap-${density}_ic_launcher.png" "$RES/mipmap-$density/ic_launcher.png"
-          done
-          # Remove the adaptive-icon override (if the template generated one) —
-          # on Android 8+, mipmap-anydpi-v26/ic_launcher.xml takes priority
-          # over the plain ic_launcher.png files above and would otherwise
-          # keep showing Flutter's default logo instead of ours.
-          rm -rf "$RES/mipmap-anydpi-v26"
-          echo "PASS: custom app icon installed for all densities"
-
-      - name: Install custom splash screen
-        shell: bash
-        run: |
-          set -euo pipefail
-          RES="android/app/src/main/res"
-          mkdir -p "$RES/drawable" "$RES/drawable-v21"
-          cp icon_source/splash_bg.png "$RES/drawable/splash_bg.png"
-          cp icon_source/splash_bg.png "$RES/drawable-v21/splash_bg.png"
-
-          cat > "$RES/drawable/launch_background.xml" << 'XMLEOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:drawable="@android:color/white" />
-              <item android:gravity="center">
-                  <bitmap android:gravity="center" android:src="@drawable/splash_bg" />
-              </item>
-          </layer-list>
-          XMLEOF
-          cp "$RES/drawable/launch_background.xml" "$RES/drawable-v21/launch_background.xml"
-
-          # Android 12+ splash screen API, if the template generated it —
-          # branded background color; safe to skip if the file isn't present.
-          V31_STYLES="$RES/values-v31/styles.xml"
-          if [ -f "$V31_STYLES" ]; then
-            sed -i 's/name="android:windowSplashScreenBackground">[^<]*</name="android:windowSplashScreenBackground">#FBF6EC</' "$V31_STYLES"
-          fi
-          echo "PASS: custom splash screen installed"
-
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Force compileSdk/targetSdk 36 for app + every plugin
-        shell: bash
-        run: python3 tools/fix_compilesdk.py
+      - name: Fix compileSdk/targetSdk (app + every plugin)
+        run: |
+          set -euo pipefail
+          if [ -f "tools/fix_compilesdk.py" ]; then
+            python3 tools/fix_compilesdk.py
+          else
+            echo "tools/fix_compilesdk.py not found in this project — skipping."
+          fi
+
+      - name: Generate app launcher icons
+        run: |
+          set -euo pipefail
+          if grep -q "flutter_launcher_icons" pubspec.yaml; then
+            dart run flutter_launcher_icons
+          else
+            echo "flutter_launcher_icons not configured in pubspec.yaml — skipping."
+          fi
 
       - name: Build debug APK
         run: flutter build apk --debug
